@@ -150,10 +150,29 @@
     </div>
 
     <script>
-        // ⚠️ 請將下方引號內的網址替換為您的 Google Apps Script 網頁應用程式網址
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx4cd9NFAUttXFdKKTqsBH6CFgrYIOQ_9FYbE-WiTsi1Jya6i7HqlgTIGwz0yk6vo5T/exec';
 
         let cloudRecords = [];
+
+        // 轉換 UTC 日期字串為本地日期 YYYY-MM-DD
+        function formatDateToLocal(rawDate) {
+            if (!rawDate) return '';
+            
+            // 如果已經是單純的 YYYY-MM-DD 格式，直接回傳
+            if (typeof rawDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(rawDate.trim())) {
+                return rawDate.trim();
+            }
+
+            const d = new Date(rawDate);
+            if (isNaN(d.getTime())) return rawDate; // 解析失敗則傳回原始值
+
+            // 自動轉為本機時區（UTC+8 台灣時間）
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+
+            return `${year}-${month}-${day}`;
+        }
 
         // 初始化預約日期為今天
         document.addEventListener("DOMContentLoaded", function() {
@@ -260,11 +279,12 @@
             }
 
             cloudRecords.forEach((record, index) => {
+                const formattedDate = formatDateToLocal(record['預約日期']);
                 const tr = document.createElement('tr');
                 tr.className = 'hover:bg-slate-50/80 transition-all';
                 tr.innerHTML = `
                     <td class="p-4 font-medium text-slate-500">${index + 1}</td>
-                    <td class="p-4">${record['預約日期'] || ''}</td>
+                    <td class="p-4 font-medium text-slate-800">${formattedDate}</td>
                     <td class="p-4">${record['接種地點'] || ''}</td>
                     <td class="p-4 font-semibold text-slate-800">${record['姓名'] || ''}</td>
                     <td class="p-4">${record['性別'] || ''}</td>
@@ -291,7 +311,7 @@
 
             const excelData = cloudRecords.map((item, index) => ({
                 '項次': index + 1,
-                '預約日期': item['預約日期'],
+                '預約日期': formatDateToLocal(item['預約日期']),
                 '接種地點': item['接種地點'],
                 '姓名': item['姓名'],
                 '性別': item['性別'],
@@ -300,7 +320,7 @@
 
             const worksheet = XLSX.utils.json_to_sheet(excelData);
             worksheet['!cols'] = [
-                {wch: 6},  {wch: 12}, {wch: 15}, 
+                {wch: 6},  {wch: 14}, {wch: 15}, 
                 {wch: 12}, {wch: 8},  {wch: 18}
             ];
 
