@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>疫苗接種意願預約系統</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 SheetJS (xlsx) 用於匯出 Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Noto Sans TC', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen py-8 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-4xl mx-auto">
+        <!-- 頁首與切換按鈕 -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 mb-6">
+            <div class="flex items-center justify-between flex-wrap gap-4">
+                <div>
+                    <h1 class="text-2xl sm:text-3xl font-bold text-slate-800 flex items-center gap-3">
+                        <span class="bg-blue-600 text-white p-2 rounded-xl text-lg">💉</span>
+                        疫苗接種意願預約系統
+                    </h1>
+                    <p class="text-slate-500 mt-1" id="subTitle">請填寫您的個人預約意願資料</p>
+                </div>
+                <div>
+                    <button id="toggleModeBtn" onclick="toggleAdminMode()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-xl transition-all flex items-center gap-2 text-sm">
+                        <span>🔐</span> 管理員後台
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 填寫者表單區塊 -->
+        <div id="userSection" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 mb-6">
+            <div id="successAlert" class="hidden mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl font-medium flex items-center gap-2">
+                <span>✅</span> 預約登記成功！感謝您的填寫。
+            </div>
+            
+            <h2 class="text-lg font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 flex items-center gap-2">
+                <span>📝</span> 填寫接種預約資料
+            </h2>
+            <form id="vaccineForm" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- 預約日期 -->
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">預約日期 <span class="text-red-500">*</span></label>
+                    <input type="date" id="sysDate" required class="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                </div>
+
+                <!-- 地點 -->
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">接種地點 <span class="text-red-500">*</span></label>
+                    <input type="text" id="location" required placeholder="例如：A中心、衛生所、大禮堂" class="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                </div>
+
+                <!-- 姓名 -->
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">姓名 <span class="text-red-500">*</span></label>
+                    <input type="text" id="name" required placeholder="請輸入真實姓名" class="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                </div>
+
+                <!-- 性別 -->
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">性別 <span class="text-red-500">*</span></label>
+                    <select id="gender" required class="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                        <option value="">請選擇性別</option>
+                        <option value="男">男</option>
+                        <option value="女">女</option>
+                    </select>
+                </div>
+
+                <!-- 疫苗施打意願選項 -->
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-slate-700 mb-2">疫苗施打意願選項 <span class="text-red-500">*</span></label>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                        <label class="flex items-center p-3 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition-all has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50/50">
+                            <input type="radio" name="vaccineOption" value="僅施打流感疫苗" required class="w-4 h-4 text-blue-600 focus:ring-blue-500">
+                            <span class="ml-2 text-sm font-medium text-slate-700">僅施打流感疫苗</span>
+                        </label>
+                        <label class="flex items-center p-3 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition-all has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50/50">
+                            <input type="radio" name="vaccineOption" value="僅施打新冠疫苗" required class="w-4 h-4 text-blue-600 focus:ring-blue-500">
+                            <span class="ml-2 text-sm font-medium text-slate-700">僅施打新冠疫苗</span>
+                        </label>
+                        <label class="flex items-center p-3 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition-all has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50/50">
+                            <input type="radio" name="vaccineOption" value="兩者皆施打" required class="w-4 h-4 text-blue-600 focus:ring-blue-500">
+                            <span class="ml-2 text-sm font-medium text-slate-700">兩者皆施打</span>
+                        </label>
+                        <label class="flex items-center p-3 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition-all has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50/50">
+                            <input type="radio" name="vaccineOption" value="兩者皆不施打" required class="w-4 h-4 text-blue-600 focus:ring-blue-500">
+                            <span class="ml-2 text-sm font-medium text-slate-700">兩者皆不施打</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- 提交按鈕 -->
+                <div class="md:col-span-2 flex justify-end gap-3 mt-4">
+                    <button type="reset" class="px-6 py-2.5 border border-slate-200 text-slate-600 font-medium rounded-xl hover:bg-slate-50 transition-all">
+                        清除重填
+                    </button>
+                    <button type="submit" id="submitBtn" class="px-6 py-2.5 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 shadow-sm shadow-blue-200 transition-all">
+                        送出預約登記
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- 管理員後台區塊 (預設隱藏) -->
+        <div id="adminSection" class="hidden bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-slate-100">
+                <div>
+                    <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                        <span>📊</span> 管理員後台：雲端預約登記清單
+                    </h2>
+                    <p class="text-sm text-slate-500 mt-1">從 Google 雲端同步資料中...</p>
+                </div>
+                <div class="flex items-center gap-2 w-full sm:w-auto">
+                    <button onclick="fetchRecords()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-xl transition-all text-sm">
+                        🔄 重新整理
+                    </button>
+                    <button onclick="exportToExcel()" class="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-emerald-600 text-white font-medium rounded-xl hover:bg-emerald-700 shadow-sm shadow-emerald-200 transition-all text-sm">
+                        <span>📥</span> 匯出 Excel
+                    </button>
+                </div>
+            </div>
+
+            <!-- 表格 -->
+            <div class="overflow-x-auto rounded-xl border border-slate-200">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50 text-slate-600 text-sm font-semibold border-b border-slate-200">
+                            <th class="p-4">項次</th>
+                            <th class="p-4">預約日期</th>
+                            <th class="p-4">地點</th>
+                            <th class="p-4">姓名</th>
+                            <th class="p-4">性別</th>
+                            <th class="p-4">施打意願選項</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recordTableBody" class="divide-y divide-slate-100 text-sm text-slate-700">
+                        <!-- 動態插入紀錄 -->
+                    </tbody>
+                </table>
+            </div>
+            <div id="emptyState" class="text-center py-12 text-slate-400">
+                目前尚無任何預約登記資料或正在載入...
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ⚠️ 請將下方引號內的網址替換為您的 Google Apps Script 網頁應用程式網址
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx4cd9NFAUttXFdKKTqsBH6CFgrYIOQ_9FYbE-WiTsi1Jya6i7HqlgTIGwz0yk6vo5T/exec';
+
+        let cloudRecords = [];
+
+        // 初始化預約日期為今天
+        document.addEventListener("DOMContentLoaded", function() {
+            const now = new Date();
+            const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+            const dateField = document.getElementById('sysDate');
+            if (dateField && !dateField.value) {
+                dateField.value = todayStr;
+            }
+        });
+
+        // 提交表單送至 Apps Script
+        document.getElementById('vaccineForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = '傳送中...';
+
+            const formData = {
+                '預約日期': document.getElementById('sysDate').value,
+                '接種地點': document.getElementById('location').value.trim(),
+                '姓名': document.getElementById('name').value.trim(),
+                '性別': document.getElementById('gender').value,
+                '施打意願選項': document.querySelector('input[name="vaccineOption"]:checked').value
+            };
+
+            fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify(formData)
+            })
+            .then(response => {
+                submitBtn.disabled = false;
+                submitBtn.textContent = '送出預約登記';
+
+                // 顯示成功提示
+                const alertBox = document.getElementById('successAlert');
+                alertBox.classList.remove('hidden');
+                setTimeout(() => { alertBox.classList.add('hidden'); }, 4000);
+
+                this.reset();
+                const now = new Date();
+                document.getElementById('sysDate').value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+            })
+            .catch(error => {
+                alert('送出失敗，請檢查網路連線或 Apps Script 部署設定！');
+                submitBtn.disabled = false;
+                submitBtn.textContent = '送出預約登記';
+            });
+        });
+
+        // 切換管理員後台模式
+        let isAdmin = false;
+        function toggleAdminMode() {
+            if (!isAdmin) {
+                const pwd = prompt('請輸入管理員密碼：');
+                if (pwd === 'admin123') { // 預設密碼 admin123
+                    isAdmin = true;
+                    document.getElementById('userSection').classList.add('hidden');
+                    document.getElementById('adminSection').classList.remove('hidden');
+                    document.getElementById('toggleModeBtn').innerHTML = '<span>👤</span> 返回填寫畫面';
+                    document.getElementById('subTitle').textContent = '管理員雲端後台模式';
+                    fetchRecords();
+                } else if (pwd !== null) {
+                    alert('密碼錯誤！');
+                }
+            } else {
+                isAdmin = false;
+                document.getElementById('adminSection').classList.add('hidden');
+                document.getElementById('userSection').classList.remove('hidden');
+                document.getElementById('toggleModeBtn').innerHTML = '<span>🔐</span> 管理員後台';
+                document.getElementById('subTitle').textContent = '請填寫您的個人預約意願資料';
+            }
+        }
+
+        // 從 Apps Script 抓取資料
+        function fetchRecords() {
+            const tbody = document.getElementById('recordTableBody');
+            tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400">正在從 Google 試算表載入資料...</td></tr>`;
+
+            fetch(SCRIPT_URL)
+                .then(response => response.json())
+                .then(data => {
+                    cloudRecords = data;
+                    renderTable();
+                })
+                .catch(error => {
+                    tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-red-500">載入失敗，請確認 Apps Script 網址是否正確或權限為「任何人」。</td></tr>`;
+                });
+        }
+
+        // 渲染後台表格
+        function renderTable() {
+            const tbody = document.getElementById('recordTableBody');
+            const emptyState = document.getElementById('emptyState');
+            
+            tbody.innerHTML = '';
+
+            if (cloudRecords.length === 0) {
+                emptyState.style.display = 'block';
+                return;
+            } else {
+                emptyState.style.display = 'none';
+            }
+
+            cloudRecords.forEach((record, index) => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50/80 transition-all';
+                tr.innerHTML = `
+                    <td class="p-4 font-medium text-slate-500">${index + 1}</td>
+                    <td class="p-4">${record['預約日期'] || ''}</td>
+                    <td class="p-4">${record['接種地點'] || ''}</td>
+                    <td class="p-4 font-semibold text-slate-800">${record['姓名'] || ''}</td>
+                    <td class="p-4">${record['性別'] || ''}</td>
+                    <td class="p-4">
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium ${
+                            String(record['施打意願選項']).includes('兩者皆施打') ? 'bg-purple-50 text-purple-700 border border-purple-200' :
+                            String(record['施打意願選項']).includes('不施打') ? 'bg-slate-100 text-slate-600 border border-slate-200' :
+                            'bg-blue-50 text-blue-700 border border-blue-200'
+                        }">
+                            ${record['施打意願選項'] || ''}
+                        </span>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // 匯出 Excel
+        function exportToExcel() {
+            if (cloudRecords.length === 0) {
+                alert('目前沒有資料可供匯出！');
+                return;
+            }
+
+            const excelData = cloudRecords.map((item, index) => ({
+                '項次': index + 1,
+                '預約日期': item['預約日期'],
+                '接種地點': item['接種地點'],
+                '姓名': item['姓名'],
+                '性別': item['性別'],
+                '施打意願選項': item['施打意願選項']
+            }));
+
+            const worksheet = XLSX.utils.json_to_sheet(excelData);
+            worksheet['!cols'] = [
+                {wch: 6},  {wch: 12}, {wch: 15}, 
+                {wch: 12}, {wch: 8},  {wch: 18}
+            ];
+
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "疫苗預約總表");
+
+            const now = new Date();
+            const dateString = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+            XLSX.writeFile(workbook, `疫苗預約總表_${dateString}.xlsx`);
+        }
+    </script>
+</body>
+</html>
